@@ -2,3 +2,6 @@
 
 .gradle
 build/
+
+data/har-raw
+data/decoded
