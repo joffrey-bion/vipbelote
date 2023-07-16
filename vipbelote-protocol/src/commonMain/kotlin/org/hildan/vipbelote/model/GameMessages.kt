@@ -1,9 +1,7 @@
 package org.hildan.vipbelote.model
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.*
 
 @Serializable
 sealed interface GameMessage : VipBeloteMessage
@@ -56,6 +54,14 @@ fun RawGameMessage.toGameMessage() = when (this) {
         else -> error("Unknown 'in' message type $type. Data: $data")
     }
 }
+
+@Serializable
+data class ReactionMessage(
+    val type: String,
+    val id: String,
+    val payload: JsonElement,
+    val userId: String
+) : GameMessage
 
 @Serializable
 data class GameStarted(

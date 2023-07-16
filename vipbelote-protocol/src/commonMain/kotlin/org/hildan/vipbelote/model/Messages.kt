@@ -7,36 +7,24 @@ import kotlinx.serialization.json.*
 sealed interface VipBeloteMessage
 
 @Serializable
-data class Response<T>(
-    val status: String,
-    val data: T,
-) : VipBeloteMessage
+sealed interface Response<out D> {
+    val status: String
+    val data: D
+}
+
+sealed interface Command {
+    /** Command ID, reused in responses. */
+    val cid: Int
+}
+
+sealed interface CommandResponse<out C : Command, out D> : Response<D> {
+    val cmd: C
+}
+
+sealed interface EmptyCommandResponse<out C : Command> : CommandResponse<C, Nothing> {
+    override val data: Nothing
+        get() = error("No data in empty response")
+}
 
 @Serializable
 data class UnknownMessage(val type: String, val data: JsonElement?) : VipBeloteMessage
-
-@Serializable
-data object ConnectOK : VipBeloteMessage
-
-@Serializable
-data object SSCommandTouch : VipBeloteMessage
-
-@Serializable
-data class Chiching(val amount: Int) : VipBeloteMessage
-
-@Serializable
-data object GetStRequest : VipBeloteMessage
-
-@Serializable
-data object NbActiveUsersRequest : VipBeloteMessage
-
-@Serializable
-data class NbActiveUsersUpdate(val activeUsersByGameType: Map<String, Int>) : VipBeloteMessage
-
-@Serializable
-data class ClMessage(
-    val type: String,
-    val id: String,
-    val payload: JsonElement,
-    val userId: String
-) : VipBeloteMessage

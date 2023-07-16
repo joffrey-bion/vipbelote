@@ -5,6 +5,9 @@ import kotlinx.serialization.json.*
 import org.hildan.socketio.*
 import org.hildan.vipbelote.model.*
 
+/**
+ * A decoder for messages in the VIP Belote game (http://vipbelote.fr).
+ */
 class VipBeloteDecoder {
 
     private data class Key(val namespace: String, val id: Int)
@@ -13,6 +16,12 @@ class VipBeloteDecoder {
     private val messagesById = mutableMapOf<Key, VipBeloteMessage>()
     private val commandsById = mutableMapOf<Key, Command>()
 
+    /**
+     * Decodes the given Socket.IO message into a [VipBeloteMessage].
+     *
+     * This operation is stateful. Commands and events that require responses are stored so that future references
+     * can find them.
+     */
     fun decode(sioMessage: SocketIOPacket.Message): VipBeloteMessage = try {
         when(sioMessage) {
             is SocketIOPacket.Event -> decodeEvent(sioMessage).also { msg ->
@@ -39,7 +48,7 @@ class VipBeloteDecoder {
             "challengeProgressUpdatedEvent" -> json.decodeFromJsonElement<ChallengeProgressUpdated>(eventData)
             "chiching" -> json.decodeFromJsonElement(ChichingSerializer, eventData)
             "clmsg.in",
-            "clmsg.out" -> json.decodeFromJsonElement<ClMessage>(eventData)
+            "clmsg.out" -> json.decodeFromJsonElement<ReactionMessage>(eventData)
             "connect.ok" -> ConnectOK
             "getst" -> GetStRequest
             "gmsg.in" -> json.decodeFromJsonElement<GameMessageIn>(eventData).toGameMessage()
@@ -52,6 +61,7 @@ class VipBeloteDecoder {
                 else -> json.decodeFromJsonElement(NbActiveUsersUpdateSerializer, eventData)
             }
             "rconn.ok" -> json.decodeFromJsonElement<RoomConnectionOk>(eventData)
+            "rcancel" -> json.decodeFromJsonElement<RoomSearchCancel>(eventData)
             "rdst" -> json.decodeFromJsonElement<RoomDestroyed>(eventData)
             "rematch" -> json.decodeFromJsonElement<RematchCommand>(eventData).also {
                 commandsById[Key(packet.namespace, it.cid)] = it
@@ -81,16 +91,16 @@ class VipBeloteDecoder {
 
     private fun decodeCommandResponse(commandKey: Key, eventData: JsonElement): VipBeloteMessage =
         when (commandsById[commandKey] ?: error("Cannot find command with id=${commandKey.id} in namespace ${commandKey.namespace}")) {
-            is RoomJoinCommand -> json.decodeFromJsonElement<CommandResponse<RoomJoinCommand, RoomJoinResponse>>(eventData)
-            is RoomLeaveCommand -> json.decodeFromJsonElement<SimpleCommandResponse<RoomLeaveCommand>>(eventData)
-            is RoomReadyCommand -> json.decodeFromJsonElement<SimpleCommandResponse<RoomReadyCommand>>(eventData)
-            is RematchCommand -> json.decodeFromJsonElement<SimpleCommandResponse<RematchCommand>>(eventData)
+            is RoomJoinCommand -> json.decodeFromJsonElement<RoomJoinResponse>(eventData)
+            is RoomLeaveCommand -> json.decodeFromJsonElement<RoomLeaveResponse>(eventData)
+            is RoomReadyCommand -> json.decodeFromJsonElement<RoomReadyResponse>(eventData)
+            is RematchCommand -> json.decodeFromJsonElement<RematchResponse>(eventData)
         }
 
     private fun decodeAck(packet: SocketIOPacket.Ack, requestMessage: VipBeloteMessage): VipBeloteMessage =
         when(requestMessage) {
-            is GetStRequest -> json.decodeFromJsonElement<Response<GetStData>>(packet.payload[0])
-            is RoomSearchRequest -> json.decodeFromJsonElement<Response<SearchUpdate>>(packet.payload[0])
+            is GetStRequest -> json.decodeFromJsonElement<GetStResponse>(packet.payload[0])
+            is RoomSearchRequest -> json.decodeFromJsonElement<RoomSearchResponse>(packet.payload[0])
             else -> error("Message type ${requestMessage::class.simpleName} not supported as initial request")
         }
 }

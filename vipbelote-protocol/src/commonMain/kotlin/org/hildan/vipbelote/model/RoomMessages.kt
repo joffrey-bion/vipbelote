@@ -8,40 +8,13 @@ import kotlinx.serialization.json.JsonObject
 sealed interface RoomMessage : VipBeloteMessage
 
 @Serializable
-data class GetStData(
-    val id: String,
-    val spectateGameId: String? = null,
-    val currentRoomId: String? = null,
-    val currentRoomType: String? = null,
-    val gameName: String? = null,
-    val lastGameStartedAt: Long,
-    val hostId: String? = null,
-    val knockoutTournamentState: KnockoutTournamentState,
-) {
-    @Serializable
-    data class KnockoutTournamentState(
-        val sessionId: String,
-        val currentGame: Long,
-        val gameName: String,
-        val settings: TournamentSettings,
-        val expiry: Long,
-    ) {
-        @Serializable
-        data class TournamentSettings(
-            val buyIn: BuyIn,
-        ) {
-            @Serializable
-            data class BuyIn(
-                val bet: Long,
-                val reward: Long,
-                val streak: Long,
-            )
-        }
-    }
-}
+data class RoomSearchRequest(val presetId: String) : RoomMessage
 
 @Serializable
-data class RoomSearchRequest(val presetId: String) : RoomMessage
+data class RoomSearchResponse(
+    override val status: String,
+    override val data: SearchUpdate,
+) : RoomMessage, Response<SearchUpdate>
 
 @Serializable
 data class SearchUpdate(
@@ -53,6 +26,9 @@ data class SearchUpdate(
     val maxSessionLifetime: Int,
     val totalMatches: Int,
 ) : RoomMessage
+
+@Serializable
+data class RoomSearchCancel(val presetId: String) : RoomMessage
 
 @Serializable
 data class RoomFound(
@@ -88,11 +64,18 @@ data class RoomJoinCommand(
 
 @Serializable
 data class RoomJoinResponse(
-    val id: String,
-    val state: String,
-    val stateData: StateData,
-    val tables: List<TableState>,
-)
+    override val cmd: RoomJoinCommand,
+    override val status: String,
+    override val data: Data,
+) : RoomMessage, CommandResponse<RoomJoinCommand, RoomJoinResponse.Data> {
+    @Serializable
+    data class Data(
+        val id: String,
+        val state: String,
+        val stateData: StateData,
+        val tables: List<TableState>,
+    )
+}
 
 @Serializable
 data class RoomLeaveCommand(
@@ -103,10 +86,28 @@ data class RoomLeaveCommand(
 ) : RoomMessage, Command
 
 @Serializable
+data class RoomLeaveResponse(
+    override val cmd: RoomLeaveCommand,
+    override val status: String,
+) : RoomMessage, EmptyCommandResponse<RoomLeaveCommand>
+
+@Serializable
 data class RoomReadyCommand(override val cid: Int) : RoomMessage, Command
 
 @Serializable
+data class RoomReadyResponse(
+    override val cmd: RoomReadyCommand,
+    override val status: String,
+) : RoomMessage, EmptyCommandResponse<RoomReadyCommand>
+
+@Serializable
 data class RematchCommand(override val cid: Int) : RoomMessage, Command
+
+@Serializable
+data class RematchResponse(
+    override val cmd: RematchCommand,
+    override val status: String,
+) : RoomMessage, EmptyCommandResponse<RematchCommand>
 
 @Serializable
 data class RoomDestroyed(val reason: String? = null) : RoomMessage
