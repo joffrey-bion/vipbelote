@@ -56,12 +56,13 @@ class VipBeloteDecoder {
             "mygupd" -> json.decodeFromJsonElement<TableState>(eventData)
             "notification",
             "notification-v2" -> json.decodeFromJsonElement<Notification>(eventData)
+            "premium.gift.notification" -> json.decodeFromJsonElement<PremiumGiftNotification>(eventData)
             "pactiveall" -> when (eventData) {
                 is JsonNull -> NbActiveUsersRequest
                 else -> json.decodeFromJsonElement(NbActiveUsersUpdateSerializer, eventData)
             }
             "rconn.ok" -> json.decodeFromJsonElement<RoomConnectionOk>(eventData)
-            "rcancel" -> json.decodeFromJsonElement<RoomSearchCancel>(eventData)
+            "rcancel" -> json.decodeFromJsonElement<RoomSearchCancelRequest>(eventData)
             "rdst" -> json.decodeFromJsonElement<RoomDestroyed>(eventData)
             "rematch" -> json.decodeFromJsonElement<RematchCommand>(eventData).also {
                 commandsById[Key(packet.namespace, it.cid)] = it
@@ -101,7 +102,8 @@ class VipBeloteDecoder {
         when(requestMessage) {
             is GetStRequest -> json.decodeFromJsonElement<GetStResponse>(packet.payload[0])
             is RoomSearchRequest -> json.decodeFromJsonElement<RoomSearchResponse>(packet.payload[0])
-            else -> error("Message type ${requestMessage::class.simpleName} not supported as initial request")
+            is RoomSearchCancelRequest -> json.decodeFromJsonElement<RoomSearchCancelResponse>(packet.payload[0])
+            else -> error("Message type ${requestMessage::class.simpleName} not supported as initial request, got ACK for it: $packet")
         }
 }
 

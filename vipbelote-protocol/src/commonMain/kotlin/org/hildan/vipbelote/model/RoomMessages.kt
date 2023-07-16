@@ -28,7 +28,10 @@ data class SearchUpdate(
 ) : RoomMessage
 
 @Serializable
-data class RoomSearchCancel(val presetId: String) : RoomMessage
+data class RoomSearchCancelRequest(val presetId: String) : RoomMessage
+
+@Serializable
+data class RoomSearchCancelResponse(override val status: String) : RoomMessage, EmptyResponse
 
 @Serializable
 data class RoomFound(

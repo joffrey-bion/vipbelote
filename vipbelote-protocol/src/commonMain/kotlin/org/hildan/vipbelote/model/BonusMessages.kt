@@ -1,7 +1,7 @@
 package org.hildan.vipbelote.model
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.*
 
 @Serializable
 sealed interface BonusMessage : VipBeloteMessage
@@ -78,13 +78,13 @@ data class BonusesUpdated(val cashback: Cashback) : BonusMessage {
 data class ChallengeProgressUpdated(val challenges: List<Challenge>) : BonusMessage {
 
     @Serializable
-    data class Challenge (
+    data class Challenge(
         val challengeViewModel: ViewModel,
         val currentProgress: Update,
-        val levelsCompleted: Update
+        val levelsCompleted: Update,
     ) {
         @Serializable
-        data class ViewModel (
+        data class ViewModel(
             val id: String,
             val categoryId: String,
             val games: List<Game>,
@@ -98,38 +98,24 @@ data class ChallengeProgressUpdated(val challenges: List<Challenge>) : BonusMess
             val completedAt: Long,
             val expiresAt: Long,
             val lockStatus: String,
-            val rerollStatus: String
+            val rerollStatus: String,
         ) {
             @Serializable
             data class Game(
-                val game: String
+                val game: String,
             )
 
             @Serializable
             data class Reward(
                 val cp: Long,
-                val items: List<Item>
-            ) {
-                @Serializable
-                data class Item (
-                    val id: String,
-                    val type: String,
-                    val durability: String,
-                    val data: Data,
-                    val amount: Long
-                ) {
-                    @Serializable
-                    data class Data(
-                        val clientPreviewUrl: String
-                    )
-                }
-            }
+                val items: List<Item>,
+            )
         }
 
         @Serializable
-        data class Update (
+        data class Update(
             val previousValue: Long,
-            val currentValue: Long
+            val currentValue: Long,
         )
     }
 }
@@ -142,3 +128,86 @@ data class XPUpdated(
     val xp: Long,
     val previousXp: Long,
 ) : BonusMessage
+
+@Serializable
+data class PremiumGiftNotification(
+    val giftReceiverId: String,
+    val giftSenderId: String,
+    val item: PremiumGiftItem,
+    val senderProfile: Profile,
+    val receiverProfile: Profile,
+) : BonusMessage {
+    @Serializable
+    data class PremiumGiftItem(
+        val item: Item,
+        val vCurrency: Boolean,
+        val group: String,
+        val prices: Prices,
+    ) {
+        @Serializable
+        data class Prices(
+            val gems: Long,
+        )
+    }
+}
+
+@Serializable
+data class Profile(
+    val username: Username,
+    val level: Int,
+    val vip: VipSubscription,
+    val location: Location,
+    val inventory: Inventory,
+    val id: String,
+    val avatar: String,
+    val status: String,
+    val age: Int?,
+    val phone: String?,
+    val sex: String,
+    val isIdentityVerified: Boolean,
+) {
+    @Serializable
+    data class Username(
+        val currentUsername: String,
+        val usernamesUsed: List<String>,
+    )
+
+    @Serializable
+    data class VipSubscription(
+        val id: String,
+        val expiresAt: Long,
+        val purchasedAt: Long,
+        val args: JsonObject? = null,
+        val custom: JsonElement? = null,
+    )
+
+    @Serializable
+    data class Location(
+        val city: String? = null,
+        val country: String? = null,
+    )
+
+    @Serializable
+    data class Inventory(
+        val items: List<InventoryItem>,
+        val dirty: Boolean,
+    ) {
+        @Serializable
+        data class InventoryItem(
+            val item: Item,
+            val equipped: Boolean? = null,
+            val expiresAt: Long,
+            val args: JsonObject? = null,
+        )
+    }
+}
+
+@Serializable
+data class Item(
+    val id: String,
+    val type: String,
+    val durability: String,
+    val data: JsonObject,
+    val lifeTime: Long? = null,
+    val amount: Int? = null,
+)

@@ -17,5 +17,12 @@ data class ChatPubMessage(
 ) : ChatMessage {
 
     @Serializable
-    data class Data(val body: String)
+    data class Data(
+        val type: String? = null,
+        val body: String? = null,
+        val info: Info? = null,
+    ) {
+        @Serializable
+        data class Info(val id: String)
+    }
 }
