@@ -7,20 +7,14 @@ import java.net.*
 import java.nio.file.*
 import kotlin.io.path.*
 
-/*
- VIP Belote HTTP upgrade request URL:
- wss://ws.vipbelote.fr/socket.io/?token=360807d6-e75f-4c75-8b18-b9c15c112684&EIO=3&transport=websocket
-
- This EIO=3 means we're using Engine.IO protocol version 3, with web socket transport.
- */
-
-private val isRootProject = Path(".").absolute().name == "vipbelote"
+private val isRootProject = Path(".").absolute().normalize().name == "vipbelote"
 private val dataDir = if (isRootProject) Path("./data") else Path("../data")
 private val rawHarRecordingsDir = dataDir.resolve("har-raw").createDirectories()
 private val trimmedHarRecordingsDir = dataDir.resolve("har-trimmed").createDirectories()
 private val decodedDataDir = dataDir.resolve("decoded").createDirectories()
 
 fun main() {
+    check(dataDir.exists()) { "The data directory $dataDir was not found" }
     trimRawHarFiles()
     trimmedHarRecordingsDir.listDirectoryEntries().forEach(::processHarFile)
 }
