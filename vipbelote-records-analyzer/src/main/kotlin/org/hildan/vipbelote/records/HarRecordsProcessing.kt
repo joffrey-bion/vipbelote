@@ -3,6 +3,7 @@ package org.hildan.vipbelote.records
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.hildan.har.*
+import org.hildan.vipbelote.model.*
 import java.net.*
 import java.nio.file.*
 import kotlin.io.path.*
@@ -40,6 +41,10 @@ private fun processHarFile(harFilePath: Path) {
         .onEach { println(it.formatted()) }
         .groupBy { it.namespace }
         .forEach { (namespace, records) ->
+            val unknownMessages = records.map { it.message }.filterIsInstance<UnknownMessage>()
+            if (unknownMessages.isNotEmpty()) {
+                error("Unknown message types need to be added:\n${unknownMessages.joinToString("\n")}")
+            }
             writeRecordsToFile(harFile = harFilePath, namespace = namespace, records = records)
         }
 }
