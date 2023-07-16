@@ -51,8 +51,8 @@ class VipBeloteDecoder {
             "clmsg.out" -> json.decodeFromJsonElement<ReactionMessage>(eventData)
             "connect.ok" -> ConnectOK
             "getst" -> GetStRequest
-            "gmsg.in" -> json.decodeFromJsonElement<GameMessageIn>(eventData).toGameMessage()
-            "gmsg.out" -> json.decodeFromJsonElement<GameMessageOut>(eventData).toGameMessage()
+            "gmsg.in" -> json.decodeFromJsonElement<RawGameMessageIn>(eventData).toGameMessage()
+            "gmsg.out" -> json.decodeFromJsonElement<RawGameMessageOut>(eventData).toGameMessage()
             "mygupd" -> json.decodeFromJsonElement<TableState>(eventData)
             "notification",
             "notification-v2" -> json.decodeFromJsonElement<Notification>(eventData)

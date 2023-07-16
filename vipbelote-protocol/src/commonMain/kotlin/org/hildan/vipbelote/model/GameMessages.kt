@@ -13,20 +13,27 @@ sealed interface RawGameMessage {
 }
 
 @Serializable
-data class GameMessageIn(
+data class RawGameMessageIn(
     override val type: Int,
     override val data: JsonObject,
 ) : RawGameMessage
 
 @Serializable
-data class GameMessageOut(
+data class RawGameMessageOut(
     val msgId: Int,
     override val type: Int,
     override val data: JsonObject,
 ) : RawGameMessage
 
 fun RawGameMessage.toGameMessage() = when (this) {
-    is GameMessageOut -> when (type) {
+    is RawGameMessageIn -> when (type) {
+        0 -> Json.decodeFromJsonElement<PlayCard>(data)
+        1 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
+        2 -> Json.decodeFromJsonElement<Declare>(data)
+        4 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
+        else -> UnknownGameMessageIn(type, data)
+    }
+    is RawGameMessageOut -> when (type) {
         0 -> Json.decodeFromJsonElement<GameStarted>(data)
         1 -> Json.decodeFromJsonElement<NewRound>(data)
         2 -> Json.decodeFromJsonElement<CardPlayed>(data)
@@ -42,18 +49,26 @@ fun RawGameMessage.toGameMessage() = when (this) {
         12 -> Json.decodeFromJsonElement<EndOfRound>(data)
         14 -> Json.decodeFromJsonElement<PlayerDeclared>(data)
         15 -> Json.decodeFromJsonElement<ComeBack>(data)
-        18 -> Json.decodeFromJsonElement<JustAPlayer>(data)
-        19 -> Json.decodeFromJsonElement<JustAPlayer>(data)
-        else -> error("Unknown 'out' message type $type. Data: $data")
-    }
-    is GameMessageIn -> when (type) {
-        0 -> Json.decodeFromJsonElement<PlayCard>(data)
-        1 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
-        2 -> Json.decodeFromJsonElement<Declare>(data)
-        4 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
-        else -> error("Unknown 'in' message type $type. Data: $data")
+        16 -> Json.decodeFromJsonElement<JustAPlayer16>(data)
+        17 -> Json.decodeFromJsonElement<ResumeGame>(data)
+        18 -> Json.decodeFromJsonElement<JustAPlayer18>(data)
+        19 -> Json.decodeFromJsonElement<JustAPlayer19>(data)
+        else -> UnknownGameMessageOut(type, msgId, data)
     }
 }
+
+@Serializable
+data class UnknownGameMessageIn(
+    val type: Int,
+    val data: JsonObject,
+) : GameMessage
+
+@Serializable
+data class UnknownGameMessageOut(
+    val type: Int,
+    val msgId: Int,
+    val data: JsonObject,
+) : GameMessage
 
 @Serializable
 data class ReactionMessage(
@@ -130,31 +145,25 @@ data class EndOfTrick(
      */
     val table: Trick,
     val trickIndex: Long,
-    val currentScoresByTeam: Score,
+    val currentScoresByTeam: ScoresByTeam,
     val trick: Trick,
-) : GameMessage {
-    @Serializable
-    data class Score(
-        val team1: Long,
-        val team2: Long,
-    )
-}
+) : GameMessage
 
 @Serializable
 data class Trick(
     val cards: List<Card>,
-    val majorCard: Card,
-    val majorCardOwner: Player,
-    val primeCard: Card,
-    val primeCardOwner: Player,
-    val playerOptions: Player,
-) {
-    @Serializable
-    data class Player(
-        val id: String,
-        val teamId: String,
-    )
-}
+    val majorCard: Card? = null, // null in some saved games' table
+    val majorCardOwner: Player? = null,
+    val primeCard: Card? = null,
+    val primeCardOwner: Player? = null,
+    val playerOptions: Player? = null,
+)
+
+@Serializable
+data class Player(
+    val id: String,
+    val teamId: String,
+)
 
 @Serializable
 data class Card(val rankEnum: Int, val suitEnum: Int)
@@ -224,4 +233,75 @@ data class Declaration(
 )
 
 @Serializable
-data class JustAPlayer(val playerId: String) : GameMessage // TODO understand this one
+data class JustAPlayer16(val playerId: String) : GameMessage // TODO understand this one
+
+@Serializable
+data class JustAPlayer18(val playerId: String) : GameMessage // TODO understand this one
+
+@Serializable
+data class JustAPlayer19(val playerId: String) : GameMessage // TODO understand this one
+
+@Serializable
+data class ResumeGame(val gameSaveData: GameSaveData) : GameMessage
+
+@Serializable
+data class GameSaveData(
+    val gameViewModel: GameViewModel,
+    val currentPlayerId: String,
+    val startPlayerId: String,
+    val myPlayerId: String,
+    val playerPositions: Map<String, Int>,
+    val playerTeams: Map<String, String>,
+    val scoresByTeam: ScoresByTeam,
+    val fromStateName: String,
+    val lastPlayableCards: List<Card>? = null,
+    val coincheMinPoints: Int? = null,
+    val availableAnnounces: List<Int>? = null,
+    val availableAnnounceVariations: List<Int>? = null,
+    val elapsedTime: Long,
+    val replacedUsers: Map<String, Boolean>,
+    val comebackRemainingMS: Long? = null,
+    val winnerTeamID: String? = null,
+)
+
+@Serializable
+data class GameViewModel(
+    val players: List<PlayerWithCards>,
+    val table: Trick,
+    val announce: Announce,
+    val currentPlayerIndex: Long,
+    val startPlayerId: String,
+    val shownCard: Card? = null,
+    val currentScoresByTeam: ScoresByTeam,
+    val lastTable: Trick? = null,
+    val lastTrick: Trick? = null,
+) {
+    @Serializable
+    data class PlayerWithCards(
+        val id: String,
+        val teamId: String,
+        val cards: List<Card?>,
+    )
+
+    @Serializable
+    data class Announce(
+        val passAnnCounter: Int,
+        val topAnnouncerPlayer: Player,
+        val announceData: AnnounceData,
+        val hasContract: Boolean,
+        val playerAnnounces: Map<String, AnnounceData>,
+    ) {
+        @Serializable
+        data class AnnounceData(
+            val announceType: Int,
+            val announceVariationType: Int? = null,
+            val points: Int? = null,
+        )
+    }
+}
+
+@Serializable
+data class ScoresByTeam(
+    val team1: Long,
+    val team2: Long,
+)
