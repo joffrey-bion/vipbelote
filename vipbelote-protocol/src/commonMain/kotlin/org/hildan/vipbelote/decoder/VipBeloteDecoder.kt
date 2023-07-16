@@ -45,6 +45,7 @@ class VipBeloteDecoder {
             "bonusesUpdated" -> json.decodeFromJsonElement<BonusesUpdated>(eventData)
             "cashbackBonusUpdate" -> json.decodeFromJsonElement<CashbackBonusUpdate>(eventData)
             "chat.pub.msg" -> json.decodeFromJsonElement<ChatPubMessage>(eventData)
+            "chat.pub.conv.del" -> json.decodeFromJsonElement(DeleteConversationSerializer, eventData)
             "challengeProgressUpdatedEvent" -> json.decodeFromJsonElement<ChallengeProgressUpdated>(eventData)
             "chiching" -> json.decodeFromJsonElement(ChichingSerializer, eventData)
             "clmsg.in",
@@ -147,6 +148,7 @@ private val JsonPrimitive.string: String
 
 
 private val ChichingSerializer = ObjectWrapperSerializer("amount", Chiching.serializer())
+private val DeleteConversationSerializer = ObjectWrapperSerializer("id", DeleteConversation.serializer())
 private val NbActiveUsersUpdateSerializer = ObjectWrapperSerializer("activeUsersByGameType", NbActiveUsersUpdate.serializer())
 
 private class ObjectWrapperSerializer<T : Any>(

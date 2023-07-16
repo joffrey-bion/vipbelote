@@ -26,3 +26,6 @@ data class ChatPubMessage(
         data class Info(val id: String)
     }
 }
+
+@Serializable
+data class DeleteConversation(val id: String) : ChatMessage
