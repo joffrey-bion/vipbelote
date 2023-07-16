@@ -160,7 +160,7 @@ data class Profile(
     val inventory: Inventory,
     val id: String,
     val avatar: String,
-    val status: String,
+    val status: String?,
     val age: Int?,
     val phone: String?,
     val sex: String,
@@ -174,9 +174,9 @@ data class Profile(
 
     @Serializable
     data class VipSubscription(
-        val id: String,
-        val expiresAt: Long,
-        val purchasedAt: Long,
+        val id: String? = null,
+        val expiresAt: Long? = null,
+        val purchasedAt: Long? = null,
         val args: JsonObject? = null,
         val custom: JsonElement? = null,
     )
