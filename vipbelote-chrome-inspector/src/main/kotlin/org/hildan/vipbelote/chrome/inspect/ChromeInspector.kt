@@ -14,18 +14,16 @@ suspend fun main() {
         println("Found VIP belote tab: $vipBeloteTab")
 
         print("Connecting to the VIP Belote tab... ")
-        val pageSession = browserSession.attachToTarget(vipBeloteTab.targetId).asPageSession()
+        val page = browserSession.attachToTarget(vipBeloteTab.targetId).asPageSession()
         println("Success!")
 
-        pageSession.use { page ->
-            print("Setting up eavesdropping...")
-            val wsTrafficEvents = page.wsTrafficEvents()
-            println("Success!")
+        print("Setting up eavesdropping...")
+        val wsTrafficEvents = page.wsTrafficEvents()
+        println("Success!")
 
-            val decoder = VipBeloteDecoder()
-            wsTrafficEvents.collect {
-                processWsEvent(decoder, it)
-            }
+        val decoder = VipBeloteDecoder()
+        wsTrafficEvents.collect {
+            processWsEvent(decoder, it)
         }
     }
 }
