@@ -1,7 +1,8 @@
 package org.hildan.vipbelote.model
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import org.hildan.vipbelote.serialization.EnumAsCodeSerializer
 
 @Serializable
 sealed interface GameMessage : VipBeloteMessage
@@ -166,7 +167,38 @@ data class Player(
 )
 
 @Serializable
-data class Card(val rankEnum: Int, val suitEnum: Int)
+data class Card(
+    @SerialName("rankEnum")
+    val rank: Rank,
+    @SerialName("suitEnum")
+    val suit: Suit,
+) {
+    override fun toString(): String = "${rank.displayName} of $suit"
+}
+
+@Serializable(with = RankEnumSerializer::class)
+enum class Rank(val serializedCode: Int, val displayName: String) {
+    C_7(serializedCode = 55, displayName = "7"),
+    C_8(serializedCode = 56, displayName = "8"),
+    C_9(serializedCode = 57, displayName = "9"),
+    Jack(serializedCode = 106, displayName = "Jack"),
+    Queen(serializedCode = 113, displayName = "Queen"),
+    King(serializedCode = 107, displayName = "King"),
+    C_10(serializedCode = 116, displayName = "10"),
+    Ace(serializedCode = 97, displayName = "Ace"),
+}
+
+private class RankEnumSerializer : EnumAsCodeSerializer<Rank>(Rank.entries, { serializedCode })
+
+@Serializable(with = SuitEnumSerializer::class)
+enum class Suit(val serializedCode: Int, val char: Char) {
+    Clubs(serializedCode = 99, char = '♣'),
+    Diamonds(serializedCode = 100, char = '♦'),
+    Hearts(serializedCode = 104, char = '♥'),
+    Spades(serializedCode = 115, char = '♠'),
+}
+
+private class SuitEnumSerializer : EnumAsCodeSerializer<Suit>(Suit.entries, { serializedCode })
 
 @Serializable
 data class EndOfRound(
