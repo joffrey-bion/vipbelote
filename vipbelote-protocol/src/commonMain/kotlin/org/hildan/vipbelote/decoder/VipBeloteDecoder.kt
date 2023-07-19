@@ -40,55 +40,51 @@ class VipBeloteDecoder {
     }
 
     private fun decodeEvent(packet: SocketIOPacket.Event): VipBeloteMessage {
-        val (eventType, eventData) = packet.payload.toVipBeloteEvent()
-        return when (eventType) {
-            "bonusesUpdated" -> json.decodeFromJsonElement<BonusesUpdated>(eventData)
-            "cashbackBonusUpdate" -> json.decodeFromJsonElement<CashbackBonusUpdate>(eventData)
-            "chat.pub.msg" -> json.decodeFromJsonElement<ChatPubMessage>(eventData)
-            "chat.pub.conv.del" -> json.decodeFromJsonElement(DeleteConversationSerializer, eventData)
-            "challengeProgressUpdatedEvent" -> json.decodeFromJsonElement<ChallengeProgressUpdated>(eventData)
-            "chiching" -> json.decodeFromJsonElement(ChichingSerializer, eventData)
-            "clmsg.in",
-            "clmsg.out" -> json.decodeFromJsonElement<ReactionMessage>(eventData)
-            "connect.ok" -> ConnectOK
-            "getst" -> GetStRequest
-            "gmsg.in" -> json.decodeFromJsonElement<RawGameMessageIn>(eventData).toGameMessage()
-            "gmsg.out" -> json.decodeFromJsonElement<RawGameMessageOut>(eventData).toGameMessage()
-            "mygupd" -> json.decodeFromJsonElement<TableState>(eventData)
-            "notification",
-            "notification-v2" -> json.decodeFromJsonElement<Notification>(eventData)
-            "premium.gift.notification" -> json.decodeFromJsonElement<PremiumGiftNotification>(eventData)
-            "pactiveall" -> when (eventData) {
-                is JsonNull -> NbActiveUsersRequest
-                else -> json.decodeFromJsonElement(NbActiveUsersUpdateSerializer, eventData)
-            }
-            "rconn.ok" -> json.decodeFromJsonElement<RoomConnectionOk>(eventData)
-            "rcancel" -> json.decodeFromJsonElement<RoomSearchCancelRequest>(eventData)
-            "rdst" -> json.decodeFromJsonElement<RoomDestroyed>(eventData)
-            "rematch" -> json.decodeFromJsonElement<RematchCommand>(eventData).also {
+        val event = packet.payload.toVipBeloteEvent()
+        return event.toMessage(packet.namespace).also {
+            if (it is Command) {
                 commandsById[Key(packet.namespace, it.cid)] = it
-            }
-            "rfound" -> json.decodeFromJsonElement<RoomFound>(eventData)
-            "rjoin" -> json.decodeFromJsonElement<RoomJoinCommand>(eventData).also {
-                commandsById[Key(packet.namespace, it.cid)] = it
-            }
-            "rleav" -> json.decodeFromJsonElement<RoomLeaveCommand>(eventData).also {
-                commandsById[Key(packet.namespace, it.cid)] = it
-            }
-            "rrdy" -> json.decodeFromJsonElement<RoomReadyCommand>(eventData).also {
-                commandsById[Key(packet.namespace, it.cid)] = it
-            }
-            "rsrch" -> json.decodeFromJsonElement<RoomSearchRequest>(eventData)
-            "rupd" -> json.decodeFromJsonElement<RoomUpdated>(eventData)
-            "sscmd.touch" -> SSCommandTouch
-            "supd" -> json.decodeFromJsonElement<SearchUpdate>(eventData)
-            "walletChipsUpdate" -> json.decodeFromJsonElement<WalletChipsUpdate>(eventData)
-            "xpUpdated" -> json.decodeFromJsonElement<XPUpdated>(eventData)
-            else -> {
-                val commandId = eventType.toIntOrNull() ?: return UnknownMessage(eventType, eventData)
-                decodeCommandResponse(Key(packet.namespace, commandId), eventData)
             }
         }
+    }
+
+    private fun VipBeloteEvent.toMessage(namespace: String): VipBeloteMessage = when (type) {
+        "bonusesUpdated" -> json.decodeFromJsonElement<BonusesUpdated>(data)
+        "cashbackBonusUpdate" -> json.decodeFromJsonElement<CashbackBonusUpdate>(data)
+        "chat.pub.msg" -> json.decodeFromJsonElement<ChatPubMessage>(data)
+        "chat.pub.conv.del" -> json.decodeFromJsonElement(DeleteConversationSerializer, data)
+        "challengeProgressUpdatedEvent" -> json.decodeFromJsonElement<ChallengeProgressUpdated>(data)
+        "chiching" -> json.decodeFromJsonElement(ChichingSerializer, data)
+        "clmsg.in",
+        "clmsg.out" -> json.decodeFromJsonElement<ReactionMessage>(data)
+        "connect.ok" -> ConnectOK
+        "getst" -> GetStRequest
+        "gmsg.in" -> json.decodeFromJsonElement<RawGameMessageIn>(data).toGameMessage()
+        "gmsg.out" -> json.decodeFromJsonElement<RawGameMessageOut>(data).toGameMessage()
+        "mygupd" -> json.decodeFromJsonElement<TableState>(data)
+        "notification",
+        "notification-v2" -> json.decodeFromJsonElement<Notification>(data)
+        "premium.gift.notification" -> json.decodeFromJsonElement<PremiumGiftNotification>(data)
+        "pactiveall" -> when (data) {
+            is JsonNull -> NbActiveUsersRequest
+            else -> json.decodeFromJsonElement(NbActiveUsersUpdateSerializer, data)
+        }
+        "rconn.ok" -> json.decodeFromJsonElement<RoomConnectionOk>(data)
+        "rcancel" -> json.decodeFromJsonElement<RoomSearchCancelRequest>(data)
+        "rdst" -> json.decodeFromJsonElement<RoomDestroyed>(data)
+        "rematch" -> json.decodeFromJsonElement<RematchCommand>(data)
+        "rfound" -> json.decodeFromJsonElement<RoomFound>(data)
+        "rjoin" -> json.decodeFromJsonElement<RoomJoinCommand>(data)
+        "rleav" -> json.decodeFromJsonElement<RoomLeaveCommand>(data)
+        "rrdy" -> json.decodeFromJsonElement<RoomReadyCommand>(data)
+        "rsrch" -> json.decodeFromJsonElement<RoomSearchRequest>(data)
+        "rupd" -> json.decodeFromJsonElement<RoomUpdated>(data)
+        "sscmd.touch" -> SSCommandTouch
+        "supd" -> json.decodeFromJsonElement<SearchUpdate>(data)
+        "walletChipsUpdate" -> json.decodeFromJsonElement<WalletChipsUpdate>(data)
+        "xpUpdated" -> json.decodeFromJsonElement<XPUpdated>(data)
+        else -> type.toIntOrNull()?.let { cmdId -> decodeCommandResponse(Key(namespace, cmdId), data) }
+            ?: UnknownMessage(type, data)
     }
 
     private fun decodeCommandResponse(commandKey: Key, eventData: JsonElement): VipBeloteMessage =
@@ -124,6 +120,15 @@ private fun JsonArray.toVipBeloteEvent(): VipBeloteEvent {
         3 -> this[2].also {
             require(this[1].isString && this[1].string == "clmsg.out") {
                 "Only 'clmsg.in'+'clmsg.out' event type is allowed to have 3 elements"
+            }
+        }
+        4 -> this[3].also {
+            require(
+                this[0].isString && this[0].string == "message" &&
+                        this[1].isString && this[1].string == "force_disconnect" &&
+                        this[2].isString && this[2].string == "rdestroy"
+            ) {
+                "Only 'message'+'force_disconnect'+'rdestroy' event type is allowed to have 4 elements"
             }
         }
         else -> error("VIP Belote events must have between 1 and 3 elements, got $size: $this")
