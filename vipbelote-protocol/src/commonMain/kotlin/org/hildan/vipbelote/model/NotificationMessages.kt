@@ -14,13 +14,9 @@ data class Notification(
     val read: Boolean,
     val createdAt: Long,
     val senderId: String? = null,
-    val params: Params,
+    val params: JsonObject,
     val senderProfile: JsonElement? = null,
     val notificationCategory: String,
     val customBodyText: JsonObject,
     val customTitleText: JsonObject,
-) : NotificationMessage {
-
-    @Serializable
-    data class Params(val stats: TableState)
-}
+) : NotificationMessage
