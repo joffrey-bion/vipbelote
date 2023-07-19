@@ -13,6 +13,7 @@ kotlinx-datetime = "0.4.0"
 kotlinx-serialization = "1.5.1"
 ktor = "2.3.2"
 slf4j = "2.0.7"
+socketio-kotlin = "0.1.1"
 
 [libraries]
 
@@ -24,3 +25,4 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+socketio-kotlin = { module = "org.hildan.socketio:socketio-kotlin", version.ref = "socketio-kotlin" }

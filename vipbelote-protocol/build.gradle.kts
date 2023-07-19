@@ -12,11 +12,10 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(project(":socket-io"))
                 implementation(libs.chrome.devtools.kotlin)
-                implementation(libs.har.parser)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.socketio.kotlin)
             }
         }
         val jvmMain by getting {
