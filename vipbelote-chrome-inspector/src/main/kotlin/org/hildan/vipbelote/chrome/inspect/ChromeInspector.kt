@@ -6,6 +6,7 @@ import org.hildan.chrome.devtools.protocol.*
 import org.hildan.chrome.devtools.sessions.*
 import org.hildan.vipbelote.decoder.*
 import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.state.*
 
 suspend fun main() {
     ChromeDPClient().webSocket().use { browserSession ->
@@ -22,16 +23,35 @@ suspend fun main() {
         println("Success!")
 
         val decoder = VipBeloteDecoder()
-        wsTrafficEvents.collect {
-            processWsEvent(decoder, it)
-        }
+        wsTrafficEvents
+            .map { decoder.decode(it.data) }
+            .filterIsInstance<Packet.Message>() // ignore transport stuff
+            .map { it.message }
+            .filterIsInstance<GameMessage>()
+            .states()
+            .distinctUntilChanged()
+            .collect {
+                println("___________________________")
+                println(it)
+            }
     }
 }
 
 private suspend fun BrowserSession.findPageMatching(predicate: (TargetInfo) -> Boolean) =
     target.getTargets().targetInfos.find { it.type == "page" && predicate(it) }
 
-private fun processWsEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame) {
+enum class WebSocketDirection { Send, Receive }
+
+data class WebSocketFrame(val direction: WebSocketDirection, val data: String)
+
+private suspend fun PageSession.wsTrafficEvents(): Flow<WebSocketFrame> {
+    network.enable()
+    val sent = network.webSocketFrameReceivedEvents().map { WebSocketFrame(WebSocketDirection.Send, it.response.payloadData) }
+    val received = network.webSocketFrameSentEvents().map { WebSocketFrame(WebSocketDirection.Receive, it.response.payloadData) }
+    return merge(sent, received)
+}
+
+private fun printDecodedEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame) {
     val packet = decoder.decode(wsFrame.data)
     if (packet !is Packet.Message) {
         return
@@ -56,15 +76,4 @@ private fun processWsEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame) {
 
 private fun printMessage(wsFrame: WebSocketFrame, packet: Packet.Message) {
     println("${wsFrame.direction.toString().padEnd(7)}\t${packet.namespace}\t${packet.message}")
-}
-
-enum class WebSocketDirection { Send, Receive }
-
-data class WebSocketFrame(val direction: WebSocketDirection, val data: String)
-
-private suspend fun PageSession.wsTrafficEvents(): Flow<WebSocketFrame> {
-    network.enable()
-    val sent = network.webSocketFrameReceivedEvents().map { WebSocketFrame(WebSocketDirection.Send, it.response.payloadData) }
-    val received = network.webSocketFrameSentEvents().map { WebSocketFrame(WebSocketDirection.Receive, it.response.payloadData) }
-    return merge(sent, received)
 }

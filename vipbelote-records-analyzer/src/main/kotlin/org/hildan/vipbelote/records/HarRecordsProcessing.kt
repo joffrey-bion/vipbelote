@@ -4,6 +4,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.hildan.har.*
 import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.state.*
 import java.net.*
 import java.nio.file.*
 import kotlin.io.path.*
@@ -36,9 +37,19 @@ private fun HarLog.filterRequestsWithWsMessages(): HarLog = copy(entries = entri
 
 private fun processHarFile(harFilePath: Path) {
     println("Processing HAR File $harFilePath...")
+    var gameState: GameState = GameState.Initial(HildanPlayerId)
     harFilePath.parseHar()
         .recordsSequence()
-        .onEach { println(it.formatted()) }
+        .onEach {
+            if (it.message is GameMessage) {
+                val newState = gameState.updatedWith(it.message)
+                if (newState != gameState) {
+                    gameState = newState
+                    println(gameState)
+                    println("_________________________________")
+                }
+            }
+        }
         .groupBy { it.namespace }
         .forEach { (namespace, records) ->
             val unknownMessages = records.map { it.message }.filterIsInstance<UnknownMessage>()

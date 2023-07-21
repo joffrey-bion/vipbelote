@@ -85,7 +85,7 @@ data class RoomLeaveCommand(
     override val cid: Int,
     val currentClientTableStateName: String,
     val currentClientRoomStateName: String,
-    val onlyLeaveTable: Boolean,
+    val onlyLeaveTable: Boolean? = null,
 ) : RoomMessage, Command
 
 @Serializable
