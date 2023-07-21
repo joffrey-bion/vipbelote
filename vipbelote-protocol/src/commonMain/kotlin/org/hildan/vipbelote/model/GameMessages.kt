@@ -28,10 +28,10 @@ data class RawGameMessageOut(
 
 fun RawGameMessage.toGameMessage() = when (this) {
     is RawGameMessageIn -> when (type) {
-        0 -> Json.decodeFromJsonElement<PlayCard>(data)
-        1 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
-        2 -> Json.decodeFromJsonElement<Declare>(data)
-        4 -> Json.decodeFromJsonElement<MakeAnnounce>(data)
+        0 -> Json.decodeFromJsonElement<PlayCardAction>(data)
+        1 -> Json.decodeFromJsonElement<BidAction>(data)
+        2 -> Json.decodeFromJsonElement<SelfDeclared>(data)
+        4 -> Json.decodeFromJsonElement<BidAction>(data)
         else -> UnknownGameMessageIn(type, data)
     }
     is RawGameMessageOut -> when (type) {
@@ -39,16 +39,16 @@ fun RawGameMessage.toGameMessage() = when (this) {
         1 -> Json.decodeFromJsonElement<NewRound>(data)
         2 -> Json.decodeFromJsonElement<CardPlayed>(data)
         3 -> Json.decodeFromJsonElement<PlayOptions>(data)
-        4 -> Json.decodeFromJsonElement<PlayerAnnounced>(data)
-        5 -> Json.decodeFromJsonElement<AnnounceOptions>(data)
-        6 -> Json.decodeFromJsonElement<PlayerAnnounced>(data)
-        7 -> Json.decodeFromJsonElement<AnnounceOptions>(data)
+        4 -> Json.decodeFromJsonElement<PlayerBid>(data)
+        5 -> Json.decodeFromJsonElement<BidOptions>(data)
+        6 -> Json.decodeFromJsonElement<PlayerBid>(data)
+        7 -> Json.decodeFromJsonElement<BidOptions>(data)
         8 -> Json.decodeFromJsonElement<CardsDealt>(data)
         9 -> Json.decodeFromJsonElement<TopCardShown>(data)
         10 -> Json.decodeFromJsonElement<AvailableDeclarations>(data)
         11 -> Json.decodeFromJsonElement<EndOfTrick>(data)
         12 -> Json.decodeFromJsonElement<EndOfRound>(data)
-        14 -> Json.decodeFromJsonElement<PlayerDeclared>(data)
+        14 -> Json.decodeFromJsonElement<OtherDeclared>(data)
         15 -> Json.decodeFromJsonElement<ComeBack>(data)
         16 -> Json.decodeFromJsonElement<JustAPlayer16>(data)
         17 -> Json.decodeFromJsonElement<ResumeGame>(data)
@@ -97,7 +97,7 @@ data class CardsDealt(
 data class TopCardShown(val card: Card) : GameMessage
 
 @Serializable
-data class AnnounceOptions(
+data class BidOptions(
     val playerIdToAnnounce: String,
     val minPoints: Int? = null,
     val availableAnnounceTypes: List<Int>?,
@@ -105,17 +105,23 @@ data class AnnounceOptions(
 ) : GameMessage
 
 @Serializable
-data class MakeAnnounce(
+data class BidAction(
     val points: Int? = null,
-    val announceType: Int, // 1000=PASS?
+    /**
+     * Suit code, or 1000 for PASS
+     */
+    val announceType: Int,
     val announceVariationType: Int?,
 ) : GameMessage
 
 @Serializable
-data class PlayerAnnounced(
+data class PlayerBid(
     val playerId: String,
     val points: Int? = null,
-    val announceType: Int, // 1000=PASS?
+    /**
+     * Suit code, or 1000 for PASS
+     */
+    val announceType: Int,
     val announceVariationType: Int?,
 ) : GameMessage
 
@@ -128,14 +134,16 @@ data class PlayOptions(
 
 @Serializable
 data class CardPlayed(
+    /** ID of the player who just played */
     val playerId: String,
+    /** The card that was just played. */
     val card: Card,
-    /** Index of the current round (pli). */
+    /** Index of the current trick (pli). */
     val trickIndex: Int,
 ) : GameMessage
 
 @Serializable
-data class PlayCard(
+data class PlayCardAction(
     val card: Card,
 ) : GameMessage
 
@@ -173,19 +181,19 @@ data class Card(
     @SerialName("suitEnum")
     val suit: Suit,
 ) {
-    override fun toString(): String = "${rank.displayName} of $suit"
+    override fun toString(): String = "${rank.displayName} ${suit.char}"
 }
 
 @Serializable(with = RankEnumSerializer::class)
-enum class Rank(val serializedCode: Int, val displayName: String) {
-    C_7(serializedCode = 55, displayName = "7"),
-    C_8(serializedCode = 56, displayName = "8"),
-    C_9(serializedCode = 57, displayName = "9"),
-    Jack(serializedCode = 106, displayName = "Jack"),
-    Queen(serializedCode = 113, displayName = "Queen"),
-    King(serializedCode = 107, displayName = "King"),
-    C_10(serializedCode = 116, displayName = "10"),
-    Ace(serializedCode = 97, displayName = "Ace"),
+enum class Rank(val serializedCode: Int, val displayName: String, val primeRank: Int) {
+    C_7(serializedCode = 55, displayName = "7", primeRank = 1),
+    C_8(serializedCode = 56, displayName = "8", primeRank = 2),
+    C_9(serializedCode = 57, displayName = "9", primeRank = 7),
+    Jack(serializedCode = 106, displayName = "J", primeRank = 8),
+    Queen(serializedCode = 113, displayName = "Q", primeRank = 3),
+    King(serializedCode = 107, displayName = "K", primeRank = 4),
+    C_10(serializedCode = 116, displayName = "10", primeRank = 5),
+    Ace(serializedCode = 97, displayName = "A", primeRank = 6),
 }
 
 private class RankEnumSerializer : EnumAsCodeSerializer<Rank>(Rank.entries, { serializedCode })
@@ -238,16 +246,20 @@ data class AvailableDeclarations(
     val availableDeclarations: List<Declaration>,
 ) : GameMessage
 
-@Serializable
-data class PlayerDeclared(
-    val playerId: String,
-    val declarations: List<Declaration>,
-) : GameMessage
+sealed interface PlayerDeclared {
+    val declarations: List<Declaration>
+}
 
 @Serializable
-data class Declare(
-    val declarations: List<Declaration>,
-) : GameMessage
+data class OtherDeclared(
+    val playerId: String,
+    override val declarations: List<Declaration>,
+) : GameMessage, PlayerDeclared
+
+@Serializable
+data class SelfDeclared(
+    override val declarations: List<Declaration>,
+) : GameMessage, PlayerDeclared
 
 @Serializable
 data class Declaration(
@@ -285,7 +297,7 @@ data class GameSaveData(
     val playerPositions: Map<String, Int>,
     val playerTeams: Map<String, String>,
     val scoresByTeam: ScoresByTeam,
-    val fromStateName: String,
+    val fromStateName: String, // e.g. "CardPlay", "Announce"
     val lastPlayableCards: List<Card>? = null,
     val coincheMinPoints: Int? = null,
     val availableAnnounces: List<Int>? = null,
@@ -318,7 +330,7 @@ data class GameViewModel(
     @Serializable
     data class Announce(
         val passAnnCounter: Int,
-        val topAnnouncerPlayer: Player,
+        val topAnnouncerPlayer: Player?,
         val announceData: AnnounceData,
         val hasContract: Boolean,
         val playerAnnounces: Map<String, AnnounceData>,
