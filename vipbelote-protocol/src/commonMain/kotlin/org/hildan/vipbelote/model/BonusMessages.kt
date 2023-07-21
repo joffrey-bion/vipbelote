@@ -159,11 +159,11 @@ data class Profile(
     val location: Location,
     val inventory: Inventory,
     val id: String,
-    val avatar: String,
+    val avatar: String?,
     val status: String?,
     val age: Int?,
     val phone: String?,
-    val sex: String,
+    val sex: String?,
     val isIdentityVerified: Boolean,
 ) {
     @Serializable
