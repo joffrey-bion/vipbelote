@@ -181,7 +181,9 @@ data class Card(
     @SerialName("suitEnum")
     val suit: Suit,
 ) {
-    override fun toString(): String = "${rank.displayName} ${suit.char}"
+    // The appended U+FE0F code turns the char into its emoji version
+    // See: https://en.wikipedia.org/wiki/Playing_cards_in_Unicode#Emoji
+    override fun toString(): String = "${rank.displayName}${suit.filledChar}\uFE0F"
 }
 
 @Serializable(with = RankEnumSerializer::class)
@@ -199,11 +201,11 @@ enum class Rank(val serializedCode: Int, val displayName: String, val primeRank:
 private class RankEnumSerializer : EnumAsCodeSerializer<Rank>(Rank.entries, { serializedCode })
 
 @Serializable(with = SuitEnumSerializer::class)
-enum class Suit(val serializedCode: Int, val char: Char) {
-    Clubs(serializedCode = 99, char = '♣'),
-    Diamonds(serializedCode = 100, char = '♦'),
-    Hearts(serializedCode = 104, char = '♥'),
-    Spades(serializedCode = 115, char = '♠'),
+enum class Suit(val serializedCode: Int, val filledChar: String, val frameChar: String) {
+    Clubs(serializedCode = 99, filledChar = "♣", frameChar = "♧"),
+    Diamonds(serializedCode = 100, filledChar = "♦", frameChar = "♢"),
+    Hearts(serializedCode = 104, filledChar = "♥", frameChar = "♡"),
+    Spades(serializedCode = 115, filledChar = "♠", frameChar = "♤"),
 }
 
 private class SuitEnumSerializer : EnumAsCodeSerializer<Suit>(Suit.entries, { serializedCode })

@@ -46,7 +46,7 @@ sealed interface GameState {
     ): WithPlayers, Playable {
         override fun toString(): String {
             val playerStates = players.values.joinToString("\n") {
-                "Player ${it.id}:\tfor sure ${it.hand.certainCards}, maybe ${it.hand.canditateCards}"
+                "Player ${it.id}:\t${it.hand.certainCards}, maybe ${it.hand.canditateCards}"
             }
             val pastTricksState = pastTricks.joinToString("\n") { " - ${it.cards}" }
             return "Table: ${currentTrick.cards}\n$playerStates\nPast tricks:\n$pastTricksState"
@@ -66,7 +66,7 @@ data class Hand(
     val certainCards: Set<Card>,
     val canditateCards: Set<Card>,
 ) {
-    override fun toString(): String = "for sure $certainCards, maybe $canditateCards"
+    override fun toString(): String = "$certainCards, and maybe $canditateCards"
 
     companion object {
         val Empty = Hand(
