@@ -1,6 +1,6 @@
 package org.hildan.vipbelote.state
 
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.messages.*
 
 const val HildanPlayerId = "21f53f8d-fa04-4a92-bf03-f0a2030391b6"
 

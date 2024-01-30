@@ -3,7 +3,7 @@ package org.hildan.vipbelote.records
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.hildan.har.*
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.messages.*
 import org.hildan.vipbelote.state.*
 import java.net.*
 import java.nio.file.*

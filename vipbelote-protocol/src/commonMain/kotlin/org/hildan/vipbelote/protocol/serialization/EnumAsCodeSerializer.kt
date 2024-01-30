@@ -1,4 +1,4 @@
-package org.hildan.vipbelote.serialization
+package org.hildan.vipbelote.protocol.serialization
 
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*

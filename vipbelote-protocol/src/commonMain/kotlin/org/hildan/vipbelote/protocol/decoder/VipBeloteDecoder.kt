@@ -1,12 +1,15 @@
-package org.hildan.vipbelote.decoder
+package org.hildan.vipbelote.protocol.decoder
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.hildan.socketio.*
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.messages.*
 
 /**
  * A decoder for messages in the VIP Belote game (http://vipbelote.fr).
+ *
+ * This class is stateful, and not thread-safe. It keeps track of past commands and messages with `ackId` in order to
+ * decode the corresponding responses and acks with the proper types.
  */
 class VipBeloteDecoder {
 

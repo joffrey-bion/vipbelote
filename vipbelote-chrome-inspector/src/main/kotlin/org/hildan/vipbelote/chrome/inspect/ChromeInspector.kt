@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.*
 import org.hildan.chrome.devtools.domains.target.*
 import org.hildan.chrome.devtools.protocol.*
 import org.hildan.chrome.devtools.sessions.*
-import org.hildan.vipbelote.decoder.*
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.decoder.*
+import org.hildan.vipbelote.protocol.messages.*
 import org.hildan.vipbelote.state.*
 
 suspend fun main() {
@@ -25,7 +25,7 @@ suspend fun main() {
         val decoder = VipBeloteDecoder()
         wsTrafficEvents
             .map { decoder.decode(it.data) }
-            .filterIsInstance<Packet.Message>() // ignore transport stuff
+            .filterIsInstance<VipBelotePacket.Message>() // ignore transport stuff
             .map { it.message }
             .filterIsInstance<GameMessage>()
             .states()
@@ -53,7 +53,7 @@ private suspend fun PageSession.wsTrafficEvents(): Flow<WebSocketFrame> {
 
 private fun printDecodedEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame) {
     val packet = decoder.decode(wsFrame.data)
-    if (packet !is Packet.Message) {
+    if (packet !is VipBelotePacket.Message) {
         return
     }
     val message = packet.message
@@ -74,6 +74,6 @@ private fun printDecodedEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame
     }
 }
 
-private fun printMessage(wsFrame: WebSocketFrame, packet: Packet.Message) {
+private fun printMessage(wsFrame: WebSocketFrame, packet: VipBelotePacket.Message) {
     println("${wsFrame.direction.toString().padEnd(7)}\t${packet.namespace}\t${packet.message}")
 }

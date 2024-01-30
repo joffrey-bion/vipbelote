@@ -1,7 +1,7 @@
 package org.hildan.vipbelote.state
 
 import kotlinx.coroutines.flow.*
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.messages.*
 import kotlin.contracts.*
 
 fun Flow<GameMessage>.states(selfPlayerId: String = HildanPlayerId): Flow<GameState> =
@@ -106,7 +106,7 @@ private fun resumedGameState(resumeGame: ResumeGame, selfPlayerId: String): Game
     }
 }
 
-private fun org.hildan.vipbelote.model.Trick.toTrick(players: Map<String, Player>): Trick {
+private fun org.hildan.vipbelote.protocol.messages.Trick.toTrick(players: Map<String, Player>): Trick {
     return Trick(
         cards = cards,
         majorCard = majorCard?.let { PlayedCard(it, players.getValue(majorCardOwner?.id!!)) },

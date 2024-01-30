@@ -1,8 +1,8 @@
-package org.hildan.vipbelote.model
+package org.hildan.vipbelote.protocol.messages
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import org.hildan.vipbelote.serialization.EnumAsCodeSerializer
+import org.hildan.vipbelote.protocol.serialization.EnumAsCodeSerializer
 
 @Serializable
 sealed interface GameMessage : VipBeloteMessage

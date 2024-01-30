@@ -1,15 +1,15 @@
-package org.hildan.vipbelote.decoder
+package org.hildan.vipbelote.protocol.decoder
 
 import org.hildan.socketio.*
-import org.hildan.vipbelote.model.*
+import org.hildan.vipbelote.protocol.messages.*
 
-sealed interface Packet {
+sealed interface VipBelotePacket {
 
-    sealed interface Namespaced : Packet {
+    sealed interface Namespaced : VipBelotePacket {
         val namespace: String
     }
 
-    sealed interface Transport : Packet {
+    sealed interface Transport : VipBelotePacket {
         data class EIO(val engineIOPacket: EngineIOPacket<*>) : Transport
 
         data class SIO(val socketIOPacket: SocketIOPacket) : Transport, Namespaced {
@@ -21,21 +21,21 @@ sealed interface Packet {
     data class Message(override val namespace: String, val message: VipBeloteMessage) : Namespaced
 }
 
-fun VipBeloteDecoder.decode(webSocketPayload: String): Packet =
+fun VipBeloteDecoder.decode(webSocketPayload: String): VipBelotePacket =
     when (val engineIOPacket = EngineIO.decodeSocketIO(webSocketPayload)) {
         is EngineIOPacket.Open,
         is EngineIOPacket.Upgrade,
         is EngineIOPacket.Ping,
         is EngineIOPacket.Pong,
         is EngineIOPacket.Close,
-        is EngineIOPacket.Noop -> Packet.Transport.EIO(engineIOPacket)
+        is EngineIOPacket.Noop -> VipBelotePacket.Transport.EIO(engineIOPacket)
         is EngineIOPacket.Message -> decode(engineIOPacket)
     }
 
-private fun VipBeloteDecoder.decode(engineIOPacket: EngineIOPacket.Message<SocketIOPacket>): Packet =
+private fun VipBeloteDecoder.decode(engineIOPacket: EngineIOPacket.Message<SocketIOPacket>): VipBelotePacket =
     when (val socketIOPacket = engineIOPacket.payload) {
         is SocketIOPacket.Connect,
         is SocketIOPacket.ConnectError,
-        is SocketIOPacket.Disconnect -> Packet.Transport.SIO(socketIOPacket)
-        is SocketIOPacket.Message -> Packet.Message(socketIOPacket.namespace, decode(socketIOPacket))
+        is SocketIOPacket.Disconnect -> VipBelotePacket.Transport.SIO(socketIOPacket)
+        is SocketIOPacket.Message -> VipBelotePacket.Message(socketIOPacket.namespace, decode(socketIOPacket))
     }

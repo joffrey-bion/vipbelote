@@ -1,4 +1,4 @@
-package org.hildan.vipbelote.model
+package org.hildan.vipbelote.protocol.messages
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
