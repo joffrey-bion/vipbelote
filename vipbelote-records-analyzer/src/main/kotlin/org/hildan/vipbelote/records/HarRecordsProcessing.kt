@@ -12,21 +12,21 @@ import kotlin.io.path.*
 private val isRootProject = Path(".").absolute().normalize().name == "vipbelote"
 private val dataDir = if (isRootProject) Path("./data") else Path("../data")
 private val rawHarRecordingsDir = dataDir.resolve("har-raw").createDirectories()
-private val trimmedHarRecordingsDir = dataDir.resolve("har-trimmed").createDirectories()
+private val filteredHarRecordingsDir = dataDir.resolve("har-filtered").createDirectories()
 private val decodedDataDir = dataDir.resolve("decoded").createDirectories()
 
 fun main() {
     check(dataDir.exists()) { "The data directory $dataDir was not found" }
-    trimRawHarFiles()
-    trimmedHarRecordingsDir.listDirectoryEntries().forEach(::processHarFile)
+    filterRawHarFiles()
+    filteredHarRecordingsDir.listDirectoryEntries().forEach(::processHarFile)
 }
 
-private fun trimRawHarFiles() {
+private fun filterRawHarFiles() {
     val json = Json { prettyPrint = true }
     rawHarRecordingsDir.listDirectoryEntries().forEach { harFile ->
-        println("Trimming raw HAR file $harFile")
-        val trimmedHar = harFile.parseHar().filterRequestsWithWsMessages()
-        trimmedHarRecordingsDir.resolve(harFile.fileName).writeText(json.encodeToString<Har>(trimmedHar))
+        println("Filtering requests with WS traffic from raw HAR file $harFile")
+        val filteredHar = harFile.parseHar().filterRequestsWithWsMessages()
+        filteredHarRecordingsDir.resolve(harFile.fileName).writeText(json.encodeToString<Har>(filteredHar))
         harFile.deleteExisting()
     }
 }
@@ -68,7 +68,7 @@ private fun writeRecordsToFile(
     val sanitizedNamespace = sanitizeForPath(namespace)
     val decodedRecordsFile = decodedDataDir.resolve("${harFile.nameWithoutExtension}/$sanitizedNamespace.txt")
     decodedRecordsFile.createParentDirectories()
-    val formattedRows = records.map {it.formatted() }
+    val formattedRows = records.map { it.formatted() }
     decodedRecordsFile.writeLines(formattedRows)
 }
 
