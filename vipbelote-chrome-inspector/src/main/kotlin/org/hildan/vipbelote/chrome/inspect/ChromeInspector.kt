@@ -7,73 +7,59 @@ import org.hildan.chrome.devtools.sessions.*
 import org.hildan.vipbelote.protocol.decoder.*
 import org.hildan.vipbelote.protocol.messages.*
 import org.hildan.vipbelote.state.*
+import java.net.ConnectException
+import kotlin.system.*
 
 suspend fun main() {
-    ChromeDPClient().webSocket().use { browserSession ->
+    connectToChrome().use { browserSession ->
         val vipBeloteTab = browserSession.findPageMatching { "vipbelote.fr" in it.url }
             ?: error("No VIP Belote tab in the current Chrome instance")
-        println("Found VIP belote tab: $vipBeloteTab")
+        println("Found VIP belote tab: ${vipBeloteTab.url}")
 
         print("Connecting to the VIP Belote tab... ")
         val page = browserSession.attachToTarget(vipBeloteTab.targetId).asPageSession()
         println("Success!")
 
         print("Setting up eavesdropping...")
-        val wsTrafficEvents = page.wsTrafficEvents()
+        val wsFrames = page.wsFramePayloads()
         println("Success!")
 
+        println("Printing game states...")
         val decoder = VipBeloteDecoder()
-        wsTrafficEvents
-            .map { decoder.decode(it.data) }
+        wsFrames
+            .map { decoder.decode(it) }
             .filterIsInstance<VipBelotePacket.Message>() // ignore transport stuff
             .map { it.message }
+            .onEach {
+                if (it is UnknownMessage) {
+                    println("*".repeat(50))
+                    println(it)
+                    println("*".repeat(50))
+                }
+            }
             .filterIsInstance<GameMessage>()
             .states()
             .distinctUntilChanged()
             .collect {
-                println("___________________________")
+                println("──────────────────────────────────")
                 println(it)
             }
     }
 }
 
+private suspend fun connectToChrome() = try {
+    ChromeDPClient().webSocket()
+} catch (e: ConnectException) {
+    System.err.println("Couldn't connect to Chrome, is the debugger enabled?")
+    exitProcess(1)
+}
+
 private suspend fun BrowserSession.findPageMatching(predicate: (TargetInfo) -> Boolean) =
     target.getTargets().targetInfos.find { it.type == "page" && predicate(it) }
 
-enum class WebSocketDirection { Send, Receive }
-
-data class WebSocketFrame(val direction: WebSocketDirection, val data: String)
-
-private suspend fun PageSession.wsTrafficEvents(): Flow<WebSocketFrame> {
+private suspend fun PageSession.wsFramePayloads(): Flow<String> {
     network.enable()
-    val sent = network.webSocketFrameReceivedEvents().map { WebSocketFrame(WebSocketDirection.Send, it.response.payloadData) }
-    val received = network.webSocketFrameSentEvents().map { WebSocketFrame(WebSocketDirection.Receive, it.response.payloadData) }
+    val sent = network.webSocketFrameReceivedEvents().map { it.response.payloadData }
+    val received = network.webSocketFrameSentEvents().map { it.response.payloadData }
     return merge(sent, received)
-}
-
-private fun printDecodedEvent(decoder: VipBeloteDecoder, wsFrame: WebSocketFrame) {
-    val packet = decoder.decode(wsFrame.data)
-    if (packet !is VipBelotePacket.Message) {
-        return
-    }
-    val message = packet.message
-    when (message) {
-        is GeneralMessage,
-        is BonusMessage,
-        is ChatMessage,
-        is NotificationMessage -> Unit // ignore
-
-        is GameMessage,
-        is RoomMessage -> printMessage(wsFrame, packet)
-
-        is UnknownMessage -> {
-            println("*".repeat(50))
-            printMessage(wsFrame, packet)
-            println("*".repeat(50))
-        }
-    }
-}
-
-private fun printMessage(wsFrame: WebSocketFrame, packet: VipBelotePacket.Message) {
-    println("${wsFrame.direction.toString().padEnd(7)}\t${packet.namespace}\t${packet.message}")
 }
