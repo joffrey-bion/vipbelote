@@ -192,6 +192,8 @@ data class TableState(
             val deltaLevel: JsonObject,
             val oldLevel: JsonObject,
             val playersBalance: JsonObject,
+            val oldRankedStats: JsonObject? = null, // wasn't here in the past, so null for past records
+            val newRankedStats: JsonObject? = null, // wasn't here in the past, so null for past records
             /** Not present in [RoomFound] event, present in [RoomUpdated] */
             val rematchDestroyTimestamp: Long? = null,
         )
@@ -214,10 +216,12 @@ data class RoomSettings(
     val debug: Boolean,
     val type: String,
     val ranked: Boolean,
+    val competitive: Boolean? = null, // wasn't here in the past, null for past records
     val locked: Boolean,
     val spectators: Boolean,
     val rematch: Boolean,
     val findNewRoomEnabled: Boolean,
+    val manualStart: Boolean? = null, // wasn't here in the past, null for past records
     val transactions: Transactions,
     val trackingId: String,
     val players: Players,
@@ -258,6 +262,7 @@ data class Game(
     val mode: String, // contree
     val enablePredefinedChat: Boolean,
     val enableEmoji: Boolean,
+    val enableEmojiAfterGame: Boolean? = null, // wasn't here in the past, so null for past records
     val enableGifts: Boolean,
     val enableVoiceMessaging: Boolean,
     val timers: Timers,
