@@ -5,7 +5,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 
 [versions]
 
-chrome-devtools-kotlin = "5.13.0-1266816"
+chrome-devtools-kotlin = "5.13.0-1282316"
 har-parser = "2.2.1"
 kotlin = "1.9.23"
 kotlinx-coroutines = "1.8.0"
