@@ -1,6 +1,7 @@
 .idea
 
 .gradle
+.kotlin
 build/
 
 data/har-raw
