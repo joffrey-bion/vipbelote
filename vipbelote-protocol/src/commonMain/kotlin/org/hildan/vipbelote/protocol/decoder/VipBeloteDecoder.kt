@@ -37,6 +37,9 @@ class VipBeloteDecoder {
                 requestMessage = messagesById[Key(sioMessage.namespace, sioMessage.ackId)]
                     ?: error("No past event corresponds to ackId=${sioMessage.ackId} in namespace ${sioMessage.namespace}"),
             )
+            is SocketIOPacket.BinaryMessage ->
+                error("Binary Socket.IO messages are not supported (namespace=${sioMessage.namespace}, " +
+                          "${sioMessage.nBinaryAttachments} binary attachments)")
         }
     } catch (e: SerializationException) {
         throw InvalidVipBeloteMessageException(sioMessage, e)
