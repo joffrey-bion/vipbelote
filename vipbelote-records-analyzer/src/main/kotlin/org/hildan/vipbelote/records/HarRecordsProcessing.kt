@@ -27,7 +27,7 @@ fun main() {
 
 private fun filterWebSocketTraffic(harFile: Path) {
     println("Filtering requests with WS traffic from raw HAR file $harFile")
-    val filteredHar = harFile.parseHar(prettyJson).filterWebSocketTraffic()
+    val filteredHar = harFile.readHar(prettyJson).filterWebSocketTraffic()
     filteredHarRecordingsDir.resolve(harFile.name).writeHar(filteredHar, prettyJson)
     harFile.deleteExisting()
 }
@@ -39,7 +39,7 @@ private fun decodeHarFile(harFilePath: Path) {
     println("Decoding VIPBelote messages from HAR File $harFilePath...")
     val outputDir = (decodedDataDir / harFilePath.nameWithoutExtension).createDirectories()
     val statePrinter = StatePrinter(HildanPlayerId)
-    harFilePath.parseHar()
+    harFilePath.readHar()
         .recordsSequence()
         .onEach { statePrinter.feed(it.message) }
         .groupBy { it.namespace }
