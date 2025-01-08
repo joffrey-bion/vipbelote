@@ -13,7 +13,7 @@ kotlinx-datetime = "0.6.1"
 kotlinx-serialization = "1.8.0"
 ktor = "3.0.3"
 slf4j = "2.0.16"
-socketio-kotlin = "1.6.0"
+socketio-kotlin = "1.7.0"
 
 [libraries]
 
