@@ -30,6 +30,7 @@ fun VipBeloteDecoder.decode(webSocketPayload: String): VipBelotePacket =
         is EngineIOPacket.Close,
         is EngineIOPacket.Noop -> VipBelotePacket.Transport.EIO(engineIOPacket)
         is EngineIOPacket.Message -> decode(engineIOPacket)
+        is EngineIOPacket.BinaryData -> error("Unexpected binary data in WebSocket payload")
     }
 
 private fun VipBeloteDecoder.decode(engineIOPacket: EngineIOPacket.Message<SocketIOPacket>): VipBelotePacket =
